@@ -38,7 +38,7 @@ class ListCommand extends Command {
     validate(args, store){
         super.validate(args, store)
         if (!this.needValidation) return null
-        var storeValueObj = store[args[0]]
+        var storeValueObj = store.get(args[0])
         if (!storeValueObj){
             return []
         }
@@ -58,7 +58,7 @@ class SetCommand extends Command {
     validate(args, store){
         super.validate(args, store)
         if (!this.needValidation) return null
-        var storeValueObj = store[args[0]]
+        var storeValueObj = store.get(args[0])
         if (!storeValueObj){
             return []
         }
@@ -75,7 +75,7 @@ class SetCommand extends Command {
 const setCommand = new Command(
     'set', 2, true,
     function(args, store, validationResult){
-        store[args[0]] = new StoreValueObj(args[1], 'string')
+        store.set(args[0], new StoreValueObj(args[1], 'string'))
         return "OK"
     }
 )
@@ -86,10 +86,8 @@ const setCommand = new Command(
 const getCommand = new Command(
     'get', 1, true,
     function(args, store, validationResult){
-        if (!(args[0] in store)){
-            return null
-        }
-        var storeValueObj = store[args[0]]
+        var storeValueObj = store.get(args[0])
+        if (!storeValueObj) return null
         if (storeValueObj.type !== 'string'){
             throw new Error("This key does not hold a string")
         }
@@ -116,7 +114,7 @@ const llenCommand = new ListCommand(
 const rpushCommand = new ListCommand(
     'rpush', 2, false,
     function (args, store, validationResult){
-        var storeValueObj = store[args[0]]
+        var storeValueObj = store.get(args[0])
         if (!storeValueObj){
             storeValueObj = new StoreValueObj([], 'list')
         }
@@ -124,7 +122,7 @@ const rpushCommand = new ListCommand(
             throw new Error("This key does not hold a list")
         }
         storeValueObj.value = storeValueObj.value.concat(args.slice(1))
-        store[args[0]] = storeValueObj
+        store.set(args[0], storeValueObj)
         return storeValueObj.value.length
     },
     false
@@ -184,7 +182,7 @@ const lrangeCommand = new ListCommand(
 const saddCommand = new SetCommand(
     'sadd', 2, false,
     function(args, store, validationResult) {
-        var storeValueObj = store[args[0]]
+        var storeValueObj = store.get(args[0])
         if (!storeValueObj){
             storeValueObj = new StoreValueObj([], 'set')
         }
@@ -201,7 +199,7 @@ const saddCommand = new SetCommand(
             return false
         })
         storeValueObj.value = storeValueObj.value.concat(newValues)
-        store[args[0]] = storeValueObj
+        store.set(args[0], storeValueObj)
         return newValues.length
     },
     false
@@ -260,7 +258,7 @@ const sinterCommand = new SetCommand(
     function(args, store, validationResult){
         var resultSet = []
         for (var i = 0; i < args.length; i++){
-            var storeValueObj = store[args[i]]
+            var storeValueObj = store.get(args[i])
             if (!storeValueObj) {
                 continue
             }
@@ -278,6 +276,83 @@ const sinterCommand = new SetCommand(
         return JSON.stringify(resultSet)
     },
     false
+)
+
+/**
+ * KEYS: List all available keys
+ */
+const keysCommand = new Command(
+    'keys', 0, true,
+    function(args, store, validationResult){
+        return JSON.stringify(store.keys())
+    }
+)
+
+/**
+ * DEL key: delete a key
+ */
+const delCommand = new Command(
+    'del', 1, true,
+    function(args, store, validationResult){
+        store.delete(args[0])
+        return "OK"
+    }
+)
+
+/**
+ * FLUSHDB: clear all keys
+ */
+const flushdbCommand = new Command(
+    'flushdb', 0, true,
+    function(args, store, validationResult){
+        var keys = store.keys()
+        for (var i = 0 ; i < keys.length; i++){
+            store.delete(keys[i])
+        }
+        return "OK"
+    }
+)
+
+/**
+ * EXPIRE key seconds: set a timeout on a key, seconds is a positive integer. Return the number of seconds if the timeout is set
+ */
+const expireCommand = new Command(
+    'expire', 2, true,
+    function(args, store, validationResult){
+        var seconds = args[1]
+        var storeValueObj = store.get(args[0])
+        if (!storeValueObj){
+            seconds = 0
+        }
+        else {
+            if (parseFloat(seconds) !== parseInt(seconds,10)
+                || parseInt(seconds, 10) <= 0){
+                throw new Error("Value must be an integer greater than 0")
+            }
+            storeValueObj.expire(seconds)
+        }
+        return seconds
+    }
+)
+
+/**
+ * TTL key: query the timeout of a key
+ */
+const ttlCommand = new Command(
+    'ttl', 1, true,
+    function(args, store, validationResult){
+        var storeValueObj = store.get(args[0])
+        if (!storeValueObj){
+            return -2
+        }
+        else if (storeValueObj.expiredAt === 0){
+            return -1
+        }
+        else {
+            var ttl = (storeValueObj.expiredAt - (new Date()).getTime()) / 1000
+            return parseInt(ttl, 10)
+        }
+    }
 )
 
 /**

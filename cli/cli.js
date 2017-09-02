@@ -32,21 +32,28 @@ stdin.addListener("data", function (d) {
     var commandStr = d.toString().trim();
     if (commandStr === 'test'){
         var testPromise = Promise.resolve(null)
+        var passed = true
         var i = 0;
         function testCommand(){
             var test = tests[i]
-            return sendCommand(test[0])
-                .then(result => {
-                    assert.strictEqual(result, test[1])
-                    i++
-                    console.log(i + " tests passed")
-                    if (i < tests.length) return testCommand()
-                }).catch(err => {
-                    console.error(err)
-                })
+            return new Promise(function(resolve){
+                setTimeout(function(){
+                    resolve(sendCommand(test[0])
+                        .then(result => {
+                            assert.strictEqual(result, test[1])
+                            i++
+                            console.log(i + " tests passed")
+                            if (i < tests.length) return testCommand()
+                        }).catch(err => {
+                            console.error(err)
+                            passed = false
+                        }))
+                }, test[2] || 0)
+            })
         }
         testCommand().then(()=>{
-            console.log("All passed")
+            if (passed) console.log("All passed")
+            process.stdout.write("\n>Ledis: ")
         })
     }
     else {
