@@ -178,6 +178,9 @@ const lrangeCommand = new ListCommand(
     true
 )
 
+/**
+ * SADD key value1 [value2...]: add values to set stored at key
+ */
 const saddCommand = new SetCommand(
     'sadd', 2, false,
     function(args, store, validationResult) {
@@ -205,7 +208,7 @@ const saddCommand = new SetCommand(
 )
 
 /**
- * 
+ * SCARD key: return the number of elements of the set stored at key
  */
 const scardCommand = new SetCommand(
     'scard', 1, true,
@@ -216,6 +219,9 @@ const scardCommand = new SetCommand(
     true
 )
 
+/**
+ * SMEMBERS key: return array of all members of set
+ */
 const smembersCommand = new SetCommand(
     'smembers', 1, true,
     function(args, store, validationResult) {
@@ -225,6 +231,9 @@ const smembersCommand = new SetCommand(
     true
 )
 
+/**
+ * SREM key value1 [value2...]: remove values from set
+ */
 const sremCommand = new SetCommand(
     'srem', 2, false,
     function(args, store, validationResult){
@@ -243,6 +252,9 @@ const sremCommand = new SetCommand(
     true
 )
 
+/**
+ * SINTER [key1] [key2] [key3] ...: set intersection among all set stored in specified keys. Return array of members of the result set
+ */
 const sinterCommand = new SetCommand(
     'sinter', 1, false,
     function(args, store, validationResult){
