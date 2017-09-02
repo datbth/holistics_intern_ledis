@@ -1,3 +1,5 @@
+var StoreValueObj = require('./storeValueObj')
+
 const commands = {}
 
 class Command {
@@ -36,14 +38,34 @@ class ListCommand extends Command {
     validate(args, store){
         super.validate(args, store)
         if (!this.needValidation) return null
-        var list = store[args[0]]
-        if (!list){
-            throw new Error("Key not found")
+        var storeValueObj = store[args[0]]
+        if (!storeValueObj){
+            return []
         }
-        else if (list.constructor !== Array) {
+        else if (storeValueObj.type !== 'list') {
             throw new Error("This key does not hold a list")
         }
-        return list
+        return storeValueObj.value
+    }
+}
+
+class SetCommand extends Command {
+    constructor(keyword, numArgs, exactNumArgs, execute, needValidation){
+        super(keyword, numArgs, exactNumArgs, execute)
+        this.needValidation = needValidation
+    }
+
+    validate(args, store){
+        super.validate(args, store)
+        if (!this.needValidation) return null
+        var storeValueObj = store[args[0]]
+        if (!storeValueObj){
+            return []
+        }
+        else if (storeValueObj.type !== 'set') {
+            throw new Error("This key does not hold a set")
+        }
+        return storeValueObj.value
     }
 }
 
@@ -53,7 +75,7 @@ class ListCommand extends Command {
 const setCommand = new Command(
     'set', 2, true,
     function(args, store, validationResult){
-        store[args[0]] = args[1]
+        store[args[0]] = new StoreValueObj(args[1], 'string')
         return "OK"
     }
 )
@@ -67,7 +89,11 @@ const getCommand = new Command(
         if (!(args[0] in store)){
             return null
         }
-        return JSON.stringify(store[args[0]])
+        var storeValueObj = store[args[0]]
+        if (storeValueObj.type !== 'string'){
+            throw new Error("This key does not hold a string")
+        }
+        return JSON.stringify(storeValueObj.value)
     }
 )
 
@@ -88,18 +114,18 @@ const llenCommand = new ListCommand(
  * RPUSH key value1 [value2...]: append 1 or more values to the list, create list if not exists, return length of list after operation
  */
 const rpushCommand = new ListCommand(
-    'rpush', 3, false,
+    'rpush', 2, false,
     function (args, store, validationResult){
-        var list = store[args[0]]
-        if (!list){
-            list = []
+        var storeValueObj = store[args[0]]
+        if (!storeValueObj){
+            storeValueObj = new StoreValueObj([], 'list')
         }
-        else if (list.constructor !== Array) {
+        else if (storeValueObj.type !== 'list') {
             throw new Error("This key does not hold a list")
         }
-        list = list.concat(args.slice(1))
-        store[args[0]] = list
-        return list.length
+        storeValueObj.value = storeValueObj.value.concat(args.slice(1))
+        store[args[0]] = storeValueObj
+        return storeValueObj.value.length
     },
     false
 )
@@ -150,6 +176,96 @@ const lrangeCommand = new ListCommand(
         return JSON.stringify(list.slice(args[1], args[2] + 1))
     },
     true
+)
+
+const saddCommand = new SetCommand(
+    'sadd', 2, false,
+    function(args, store, validationResult) {
+        var storeValueObj = store[args[0]]
+        if (!storeValueObj){
+            storeValueObj = new StoreValueObj([], 'set')
+        }
+        else if (storeValueObj.type !== 'set') {
+            throw new Error("This key does not hold a set")
+        }
+        var addedValues = []
+        var newValues = args.slice(1).filter(value => {
+            if (addedValues.indexOf(value) === -1
+                && storeValueObj.value.indexOf(value) === -1){
+                addedValues.push(value)
+                return true
+            }
+            return false
+        })
+        storeValueObj.value = storeValueObj.value.concat(newValues)
+        store[args[0]] = storeValueObj
+        return newValues.length
+    },
+    false
+)
+
+/**
+ * 
+ */
+const scardCommand = new SetCommand(
+    'scard', 1, true,
+    function (args, store, validationResult){
+        var set = validationResult
+        return set.length
+    },
+    true
+)
+
+const smembersCommand = new SetCommand(
+    'smembers', 1, true,
+    function(args, store, validationResult) {
+        var set = validationResult
+        return JSON.stringify(set)
+    },
+    true
+)
+
+const sremCommand = new SetCommand(
+    'srem', 2, false,
+    function(args, store, validationResult){
+        var set = validationResult
+        var numValuesRemoved = 0;
+        for (var i = 1; i < args.length; i++){
+            var value = args[i]
+            var index = set.indexOf(value)
+            if (index !== -1){
+                set.splice(index, 1)
+                numValuesRemoved++
+            }
+        }
+        return numValuesRemoved
+    },
+    true
+)
+
+const sinterCommand = new SetCommand(
+    'sinter', 1, false,
+    function(args, store, validationResult){
+        var resultSet = []
+        for (var i = 0; i < args.length; i++){
+            var storeValueObj = store[args[i]]
+            if (!storeValueObj) {
+                continue
+            }
+            if (storeValueObj.type !== 'set'){
+                throw new Error("Key " + args[i] + " does not hold a set")
+            }
+            if (!resultSet.length) {
+                resultSet = storeValueObj.value
+            }
+            else {
+                var newValues = storeValueObj.value.filter(value => resultSet.indexOf(value) === -1)
+                resultSet = resultSet.concat(newValues)
+            }
+        }
+        return JSON.stringify(resultSet)
+    },
+    false
 )
 
 /**
