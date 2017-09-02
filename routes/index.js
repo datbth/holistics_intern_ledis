@@ -2,23 +2,62 @@ var express = require('express');
 var router = express.Router();
 var middlewares = require('../middlewares')
 var commands = require('../commands')
+var constants = require('../constants')
 
 class Store {
     constructor(){
         this.data = {}
+        this.expiringKeys = []
+        this.expirer = this.runActiveExpirer()
+        this.checkingKeys = false
+    }
+
+    runActiveExpirer(){
+        return setInterval(()=>{
+            this.checkExpiringKeys()
+        }, constants.activeExpirerInterval)
+    }
+
+    checkExpiringKeys(){
+        if (this.checkingKeys) return
+        this.checkingKeys = true
+        while(this.checkingKeys){
+            var numKeysToCheck = Math.min(constants.numKeysToCheckPerInterval, this.expiringKeys.length)
+            var numExpiredKeys = 0
+            for (var i = 0; i < numKeysToCheck; i++){
+                var index = Math.floor(Math.random() * this.expiringKeys.length)
+                var key = this.expiringKeys[i]
+                var expired = this.checkAndDelExpiredKey(key)
+                if (expired) {
+                    numExpiredKeys++
+                }
+            }
+            if (!this.expiringKeys.length){
+                this.checkingKeys = false
+            }
+            else if (numExpiredKeys / numKeysToCheck <= (1 - constants.maxExpiredKeyPercentage)){
+                this.checkingKeys = false
+            }
+        }
+    }
+
+    checkAndDelExpiredKey(key){
+        var storeValueObj = this.data[key]
+        if (storeValueObj && storeValueObj.expiredAt > 0) {
+            var ttl = (storeValueObj.expiredAt - (new Date()).getTime()) / 1000
+            if (ttl <= 0){
+                delete store[key]
+                this.expiringKeys.splice(this.expiringKeys.indexOf(key), 1)
+                return true
+            }
+        }
+        return false
     }
 
     get(key){
         var storeValueObj = this.data[key]
-        if (storeValueObj && storeValueObj.expiredAt > 0) {
-            var ttl = (storeValueObj.expiredAt - (new Date()).getTime()) / 1000
-            ttl = parseInt(ttl, 10)
-            if (ttl <= 0){
-                delete store[key]
-                return undefined
-            }
-
-        }
+        var expired = this.checkAndDelExpiredKey(key)
+        if (expired) return undefined
         return storeValueObj
     }
 

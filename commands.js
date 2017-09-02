@@ -330,6 +330,9 @@ const expireCommand = new Command(
                 throw new Error("Value must be an integer greater than 0")
             }
             storeValueObj.expire(seconds)
+            if (store.expiringKeys.indexOf(args[0]) === -1){
+                store.expiringKeys.push(args[0])
+            }
         }
         return seconds
     }
