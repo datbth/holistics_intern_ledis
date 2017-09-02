@@ -23,7 +23,7 @@ router.post('/', function(req, res, next) {
     else {
         result += ": Invalid data"
     }
-    res.send(result)
+    res.send("" + result)
 });
 
 module.exports = router;
