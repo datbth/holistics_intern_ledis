@@ -2,21 +2,21 @@ Name: Bui Thanh Dat
 
 The purpose of this project is to satisfy the interview test from Holistics: build a simple, stripped down version of a Redis server, named Ledis, together with a simple nodejs cli and a web cli.
 
-# Assumptions/Limitations
+# 1. Assumptions/Limitations
 * It is assumed that the total amount of data that is going to be stored is not large and be handled properly in memory by pure Javascript
 * The CLIs were developed with minimal functions and satisfy the purpose of demonstrating the Ledis server
 * For the details of each command that were not specified in the requirements, especially the special cases, I follow Redis to find the expected behaviours
 * For requirements of SAVE and RESTORE, it is not clear what 'state' is, and the syntax of these commands are also different from those on Redis. Thus, I assume it is the whole current database
 
-# Design
-## Endpoint
+# 2. Design
+## 2.a. Endpoint
 The Ledis server has one important endpoint: `POST /`
 This endpoint accepts the request body as plain text, which is supposed to be the command sent by the user. There are two custom headers:
 * `passwd` a password string. This is just to prevent unwanted access to the server. The password is compared with a hard-coded string stored in `constants.js`
 * `storename` the name of the store that needs to be accessed. This provides an isolation between different testing environments.
 
-## Major classes
-### Store
+## 2.b. Major classes
+### 2.b.i. Store
 holds the data that the user wants to store
 #### Attributes
 * `name` the name to identify the store
@@ -27,14 +27,14 @@ holds the data that the user wants to store
 #### Behaviours
 * passive expirer: whenever a key is get, the Store checks its time-to-live (`ttl`) and delete the key if `ttl` <= 0
 * active expirer: when the Store is created, it starts a interval timer named `expirer`. This timer ticks every 100ms. In every tick, 20 random keys in `expiringKeys` are checked, if more than 5 keys are expired, it repeats from picking 20 new random keys.
-### StoreValueObj
+### 2.b.ii. StoreValueObj
 represents the value of a key
 #### Attributes
 * `value` the actual data value
 * `type` indicates the type of the value, either "string","list", or "set"
 * `expiredAt` the time in ms when the key expires
 * `ttl` time-to-live: the time in seconds until the key expires, -1 if there is no expiration
-### Command
+### 2.b.iii. Command
 #### Attributes
 * `keyword` indentifies the Command
 * `numArgs` number of arguments this command accepts
@@ -44,13 +44,13 @@ represents the value of a key
 * each Command implements its own function to execute
 * when `execute()`, a Command always validate the number of args passed in. If `exactNumArgs`=`false`, number of args passed in must be >= `numArgs`
 
-## Static variables
-### commands
+## 2.c. Static variables
+### 2.c.i. commands
 an object storing all the commands. It uses their `keyword`s as the keys
-### stores
+### 2.c.ii. stores
 an object storing all stores. It uses their `name` as the keys
 
-## Processing
+## 2.d. Processing
 In order to process a command, the server follow the following steps. During each step, any any error occured would be thrown and sent to the client.
 1. authorize user using the header `passwd`
 2. find the Store that user wants to access using the header `storename`, if the Store with that name has not been created, create a new Store and add it to `stores`. If the header `storename` is not set or empty, use the name "common"
@@ -59,7 +59,7 @@ In order to process a command, the server follow the following steps. During eac
 4. execute the command using its `execute()` with the parsed `args`, on the Store found in step 2
 5. send the result to the client
 
-# Thought process
+# 3. Thought process
 1. After reading the requirements, I choose NodeJs because I am quite confident with it and believe Javascript objects and json are very suitable
 2. For each required command, I read on Redis how it should function, and try it out on https://try.redis.io/
 3. I addded the custom header `passwd` because I do not want my public server to be so public.
