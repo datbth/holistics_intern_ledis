@@ -14,8 +14,8 @@ router.use(middlewares.rawBody)
 // POST endpoint
 router.post('/', function(req, res, next) {
     // create directory to save stores
-    if (!fs.existsSync(constants.storesPath)) {
-        fs.mkdirSync(constants.storesPath);
+    if (!fs.existsSync(constants.snapshotsPath)) {
+        fs.mkdirSync(constants.snapshotsPath);
     }
 
     // get appropriate store
