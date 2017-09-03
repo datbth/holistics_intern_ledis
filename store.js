@@ -44,7 +44,6 @@ class Store {
             var ttl = (storeValueObj.expiredAt - (new Date()).getTime()) / 1000
             storeValueObj.ttl = ttl
             if (ttl <= 0){
-                storeValueObj.ttl = -1
                 this.delete(key)
                 this.expiringKeys.splice(this.expiringKeys.indexOf(key), 1)
                 return true
