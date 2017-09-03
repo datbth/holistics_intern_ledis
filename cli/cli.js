@@ -2,12 +2,14 @@ var request = require('request');
 var assert = require('assert')
 var tests = require('./tests')
 const url = "http://128.199.166.9:3000/"
+const storeName = process.argv.length === 3 ? process.argv[2] : ""
 
 function sendCommand(commandStr){
     return new Promise (function(resolve, reject){
         request.post({
                 headers: {
-                    passwd:"BuiThanhDat"
+                    passwd:"BuiThanhDat",
+                    storename: storeName
                 },
                 url: url,
                 body: commandStr
@@ -19,7 +21,7 @@ function sendCommand(commandStr){
                 else {
                     result = body
                 }
-                resolve(body)
+                resolve(result)
             }
         );
     })
