@@ -1,4 +1,5 @@
 var StoreValueObj = require('./storeValueObj')
+var fs = require('fs')
 
 const commands = {}
 
@@ -348,13 +349,56 @@ const ttlCommand = new Command(
         if (!storeValueObj){
             return -2
         }
-        else if (storeValueObj.expiredAt === 0){
-            return -1
+        return parseInt(storeValueObj.ttl, 10)
+    }
+)
+
+/**
+ * SAVE: save current state in a snapshot
+ */
+const saveCommand = new Command(
+    'save', 0, true,
+    function(args, store, validationResult){
+        try {
+            fs.writeFileSync("state.ldb", JSON.stringify(store.data))
         }
-        else {
-            var ttl = (storeValueObj.expiredAt - (new Date()).getTime()) / 1000
-            return parseInt(ttl, 10)
+        catch(err) {
+            console.log(err)
+            throw new Error("Could not save state to disk")
         }
+        return "OK"
+    }
+)
+
+/**
+ * RESTORE: restore from the last snapshot
+ */
+const restoreCommand = new Command(
+    'restore', 0, false,
+    function(args, store, validationResult){
+        var replace = false;
+        if (args.length > 1){
+            throw new Error("Syntax error")
+        }
+        else if (args.length === 1){
+            if (args[0] !== 'REPLACE'){
+                throw new Error("Syntax error")
+            }
+            else {
+                replace = true
+            }
+        }
+        var restoringData
+        try {
+            restoringData = fs.readFileSync('state.ldb', 'utf8')
+        }
+        catch(err){
+            console.log(err)
+            throw new Error("Could not read state from disk")
+        }
+        restoringData = JSON.parse(restoringData)
+        store.restore(restoringData, replace)
+        return "OK"
     }
 )
 

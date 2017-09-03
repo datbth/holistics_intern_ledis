@@ -3,6 +3,7 @@ class StoreValueObj {
         this.value = value
         this.type = type
         this.expiredAt = 0
+        this.ttl = -1
     }
 
     expire(seconds) {
