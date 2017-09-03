@@ -3,14 +3,32 @@ var router = express.Router();
 var middlewares = require('../middlewares')
 var commands = require('../commands')
 var Store = require('../store')
+var fs = require('fs')
 
-const store = new Store()
+const stores = {}
 
 router.use(middlewares.authorize)
 router.use(middlewares.rawBody)
 
 // POST endpoint
 router.post('/', function(req, res, next) {
+    // create directory to save stores
+    if (!fs.existsSync('stores/')) {
+        fs.mkdirSync('stores/');
+    }
+
+    // get appropriate store
+    var storeName = req.headers.storename || "common"
+    var store
+    if (storeName in stores){
+        store = stores[storeName]
+    }
+    else {
+        store = new Store(storeName)
+        stores[storeName] = store
+    }
+
+    // process the command
     var result = "ERROR"
     var commandStr = req.rawBody
     if (typeof commandStr === 'string' || commandStr instanceof String) {

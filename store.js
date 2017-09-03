@@ -1,11 +1,12 @@
 var constants = require('./constants')
 
 class Store {
-    constructor(clientHash){
+    constructor(name){
         this.data = {}
         this.expiringKeys = []
         this.expirer = this.runActiveExpirer()
         this.checkingKeys = false
+        this.name = name
     }
 
     runActiveExpirer(){

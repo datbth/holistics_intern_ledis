@@ -360,7 +360,7 @@ const saveCommand = new Command(
     'save', 0, true,
     function(args, store, validationResult){
         try {
-            fs.writeFileSync("state.ldb", JSON.stringify(store.data))
+            fs.writeFileSync("stores/" + store.name + ".ldb", JSON.stringify(store.data))
         }
         catch(err) {
             console.log(err)
@@ -390,7 +390,7 @@ const restoreCommand = new Command(
         }
         var restoringData
         try {
-            restoringData = fs.readFileSync('state.ldb', 'utf8')
+            restoringData = fs.readFileSync("stores/" + store.name + '.ldb', 'utf8')
         }
         catch(err){
             console.log(err)
