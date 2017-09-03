@@ -1,0 +1,80 @@
+<html>
+    <head>
+        <title>Ledis CLI</title>
+        <script
+            src="https://code.jquery.com/jquery-3.2.1.min.js"
+            integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+            crossorigin="anonymous"></script>
+        <style>
+            body {
+                padding: 20px;
+            }
+
+            #log {
+                height: 500px;
+                overflow: auto;
+                font-size: 14px;
+            }
+
+            #command-form {
+                width: 100%;
+                display: flex;
+                padding: 10px;
+                box-sizing: border-box;
+                background-color: sandybrown
+            }
+
+            #command {
+                flex: 1;
+                padding-left: 10px;
+                border: none;
+                background-color: transparent;
+                outline: none;
+            }
+        </style>
+    </head>
+    <body>
+        <h3>Logs</h3>
+        <div id="log">
+            <p id="log-entry-sample"></p>
+        </div>
+        <form id="command-form">
+            <label>>Ledis: </label><input autofocus id="command"/>
+        </form>
+
+        <input placeholder="password" id="passwd"/>
+
+        <script>
+            var logDiv = $("#log")
+            var commandForm = $("#command-form")
+            var logEntrySample = $("#log-entry-sample")
+            var commandInput = $("#command")
+            var passwdInput = $("#passwd")
+
+            commandForm.on("submit", function(ev){
+                ev.preventDefault()
+                var command = commandInput.val()
+                addLogEntry(">" + command)
+                $.ajax({
+                    url: "http://128.199.166.9:3000/",
+                    method: 'POST',
+                    headers: {
+                        passwd: passwdInput.val()
+                    },
+                    data: commandInput.val(),
+                    success: function(data){
+                        addLogEntry(data)
+                        commandInput.val("")
+                    }
+                })
+            })
+
+            function addLogEntry(text) {
+                var logEntry = logEntrySample.clone()
+                logEntry.attr("id","")
+                logEntry.text(text)
+                logDiv.append(logEntry)
+            }
+        </script>
+    </body>
+</html>
