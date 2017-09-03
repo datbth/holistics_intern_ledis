@@ -257,23 +257,28 @@ const sremCommand = new SetCommand(
 const sinterCommand = new SetCommand(
     'sinter', 1, false,
     function(args, store, validationResult){
-        var resultSet = []
+        var valueCountDict = {}
         for (var i = 0; i < args.length; i++){
             var storeValueObj = store.get(args[i])
             if (!storeValueObj) {
-                continue
+                return JSON.stringify([])
             }
             if (storeValueObj.type !== 'set'){
                 throw new Error("Key " + args[i] + " does not hold a set")
             }
-            if (!resultSet.length) {
-                resultSet = storeValueObj.value
-            }
-            else {
-                var newValues = storeValueObj.value.filter(value => resultSet.indexOf(value) === -1)
-                resultSet = resultSet.concat(newValues)
+            for (var j = 0; j < storeValueObj.value.length; j++){
+                var value = storeValueObj.value[j]
+                if (value in valueCountDict){
+                    valueCountDict[value]++
+                }
+                else {
+                    valueCountDict[value] = 1
+                }
             }
         }
+        var resultSet = Object.keys(valueCountDict).filter(
+            value => valueCountDict[value] === args.length
+        )
         return JSON.stringify(resultSet)
     },
     false
