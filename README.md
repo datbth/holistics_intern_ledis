@@ -1,5 +1,6 @@
 Name: Bui Thanh Dat
-This purpose of this project is to satisfy the interview test from Holistics: build a simple, stripped down version of a Redis server, named Ledis, together with a simple nodejs cli and a web cli.
+
+The purpose of this project is to satisfy the interview test from Holistics: build a simple, stripped down version of a Redis server, named Ledis, together with a simple nodejs cli and a web cli.
 
 # Assumptions/Limitations
 * It is assumed that the total amount of data that is going to be stored is not large and be handled properly in memory by pure Javascript
