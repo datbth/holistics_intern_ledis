@@ -3,6 +3,7 @@ var router = express.Router();
 var middlewares = require('../middlewares')
 var commands = require('../commands')
 var Store = require('../store')
+var constants = require('../constants')
 var fs = require('fs')
 
 const stores = {}
@@ -13,8 +14,8 @@ router.use(middlewares.rawBody)
 // POST endpoint
 router.post('/', function(req, res, next) {
     // create directory to save stores
-    if (!fs.existsSync('stores/')) {
-        fs.mkdirSync('stores/');
+    if (!fs.existsSync(constants.storesPath)) {
+        fs.mkdirSync(constants.storesPath);
     }
 
     // get appropriate store
