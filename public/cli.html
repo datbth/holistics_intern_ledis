@@ -42,6 +42,7 @@
             <label>>Ledis: </label><input autofocus id="command"/>
         </form>
 
+        <input placeholder="store name" id="store"/>
         <input placeholder="password" id="passwd"/>
 
         <script>
@@ -50,6 +51,7 @@
             var logEntrySample = $("#log-entry-sample")
             var commandInput = $("#command")
             var passwdInput = $("#passwd")
+            var storeInput = $("#store")
 
             commandForm.on("submit", function(ev){
                 ev.preventDefault()
@@ -59,7 +61,8 @@
                     url: "http://128.199.166.9:3000/",
                     method: 'POST',
                     headers: {
-                        passwd: passwdInput.val()
+                        passwd: passwdInput.val(),
+                        storename: storeInput.val()
                     },
                     data: commandInput.val(),
                     success: function(data){
